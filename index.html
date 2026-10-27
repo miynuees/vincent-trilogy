@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>빈센트 3부작</title>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    min-height: 100vh;
+    background: radial-gradient(ellipse at 50% 30%, #1d2338 0%, #0c0f1c 65%, #050710 100%);
+    color: #f5e9c8;
+    font-family: 'Gowun Dodum', sans-serif;
+    overflow-x: hidden;
+  }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 64px 16px 72px; text-align: center; }
+
+  .series {
+    font-size: 0.8rem; letter-spacing: 6px; color: rgba(245,233,200,0.5);
+    margin-bottom: 14px;
+  }
+  h1 {
+    font-family: 'Nanum Myeongjo', serif; font-weight: 800;
+    font-size: clamp(2rem, 6vw, 3rem); letter-spacing: 6px; color: #f5d579;
+    text-shadow: 0 0 30px rgba(245,213,121,0.25);
+    cursor: default; user-select: none;
+  }
+  .sub {
+    margin-top: 12px; font-family: 'Nanum Myeongjo', serif;
+    font-size: 1rem; color: #d8c8a8; line-height: 1.8;
+  }
+
+  /* 갈색 → 노랑 → 파랑, 깬 만큼 색이 찬다 */
+  .palette {
+    display: flex; justify-content: center; gap: 6px; margin: 30px auto 40px;
+  }
+  .palette span {
+    width: 64px; height: 10px; background: #2a2a34;
+    transition: background 1.2s ease, box-shadow 1.2s ease;
+  }
+  .palette span.on.p1 { background: #8a5a2e; box-shadow: 0 0 12px rgba(138,90,46,0.6); }
+  .palette span.on.p2 { background: #e8c040; box-shadow: 0 0 12px rgba(232,192,64,0.6); }
+  .palette span.on.p3 { background: #3a68b0; box-shadow: 0 0 12px rgba(58,104,176,0.6); }
+
+  .rooms {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px;
+  }
+  .room {
+    position: relative; text-align: left;
+    background: rgba(255,255,255,0.03);
+    border: 2px solid #3a3a48;
+    padding: 14px 14px 18px;
+    cursor: pointer;
+    transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    opacity: 0; transform: translateY(14px);
+    animation: rise 1s ease forwards;
+  }
+  .room:nth-child(2) { animation-delay: 0.25s; }
+  .room:nth-child(3) { animation-delay: 0.5s; }
+  @keyframes rise { to { opacity: 1; transform: translateY(0); } }
+  .room.open:hover { transform: translateY(-4px); border-color: var(--accent); box-shadow: 0 0 26px var(--glow); }
+  .room.locked { cursor: not-allowed; }
+  .room.next { border-color: var(--accent); }
+
+  .room canvas {
+    display: block; width: 100%; aspect-ratio: 8 / 5;
+    image-rendering: pixelated; image-rendering: crisp-edges;
+    background: #111;
+  }
+  .room.locked canvas { filter: grayscale(1) brightness(0.35); }
+  .room .lock {
+    position: absolute; left: 14px; right: 14px; top: 14px; aspect-ratio: 8 / 5;
+    display: none; align-items: center; justify-content: center;
+    font-size: 0.85rem; color: rgba(245,233,200,0.75); letter-spacing: 1px;
+    background: rgba(5,7,16,0.45);
+  }
+  .room.locked .lock { display: flex; }
+
+  .room .no { margin-top: 14px; font-size: 0.75rem; letter-spacing: 3px; color: var(--accent); }
+  .room h2 {
+    margin-top: 4px; font-family: 'Nanum Myeongjo', serif; font-weight: 800;
+    font-size: 1.3rem; color: #f5e9c8;
+  }
+  .room .when { margin-top: 2px; font-size: 0.82rem; color: rgba(245,233,200,0.55); }
+  .room .desc { margin-top: 10px; font-size: 0.9rem; line-height: 1.75; color: #d8c8a8; }
+  .room .state {
+    margin-top: 12px; font-size: 0.8rem; color: rgba(245,233,200,0.5);
+    border-top: 1px dashed #3a3a48; padding-top: 10px;
+  }
+  .room .state b { color: var(--accent); font-weight: normal; }
+
+  .r1 { --accent: #c8945a; --glow: rgba(200,148,90,0.3); }
+  .r2 { --accent: #f5d579; --glow: rgba(245,213,121,0.3); }
+  .r3 { --accent: #8ab4f0; --glow: rgba(138,180,240,0.3); }
+
+  .actions { margin-top: 44px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .main-btn {
+    background: rgba(245,213,121,0.1); border: 2px solid #f5d579; color: #f5d579;
+    font-family: 'Nanum Myeongjo', serif; font-weight: 700; font-size: 1.05rem;
+    padding: 14px 34px; letter-spacing: 2px; cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  .main-btn:hover { background: rgba(245,213,121,0.22); box-shadow: 0 0 28px rgba(245,213,121,0.3); transform: translateY(-2px); }
+  .reset {
+    background: none; border: none; color: rgba(245,233,200,0.4);
+    font-family: 'Gowun Dodum', sans-serif; font-size: 0.82rem; cursor: pointer;
+    text-decoration: underline; text-underline-offset: 3px;
+  }
+  .reset:hover { color: rgba(245,233,200,0.8); }
+  .note { margin-top: 40px; font-size: 0.78rem; color: rgba(245,233,200,0.35); line-height: 1.8; }
+
+  #toast {
+    position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%);
+    background: #1a1d2c; border: 2px solid #f5d579; color: #f5e9c8;
+    padding: 10px 20px; font-size: 0.9rem; opacity: 0; pointer-events: none;
+    transition: opacity 0.4s ease; max-width: calc(100% - 32px);
+  }
+  #toast.show { opacity: 1; }
+
+  @media (max-width: 760px) {
+    .wrap { padding-top: 44px; }
+    .rooms { grid-template-columns: 1fr; max-width: 420px; margin: 0 auto; }
+    .palette span { width: 48px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="series">미술 방탈출</div>
+  <h1 id="title">빈센트 3부작</h1>
+  <div class="sub">빈센트 반 고흐가 머물렀던 세 개의 방<br>누에넨 · 아를 · 생레미</div>
+
+  <div class="palette"><span class="p1"></span><span class="p2"></span><span class="p3"></span></div>
+
+  <div class="rooms" id="rooms"></div>
+
+  <div class="actions">
+    <button class="main-btn" id="main-btn"></button>
+    <button class="reset" id="reset-btn" onclick="resetAll()">기록 지우고 처음부터</button>
+  </div>
+  <div class="note">앞 방의 선택이 다음 방에 반영됩니다.</div>
+</div>
+<div id="toast"></div>
+
+<script>
+  const ROOMS = [
+    { key: 'nuenen', file: 'nuenen.html', no: '첫 번째 방', name: '누에넨의 작업실',
+      when: '1885년 가을 · 네덜란드 누에넨',
+      desc: '그림을 시작한 지 5년째, 어두운 갈색 물감으로 농부와 직조공을 그리던 작업실입니다.' },
+    { key: 'arles', file: 'arles.html', no: '두 번째 방', name: '아를의 방',
+      when: '1888년 가을 · 프랑스 아를',
+      desc: '남프랑스에서 얻은 노란 집. 고갱이 오기를 기다리던 방입니다.' },
+    { key: 'saintremy', file: 'saint-remy.html', no: '세 번째 방', name: '생레미의 창',
+      when: '1889년 5월 · 프랑스 생레미',
+      desc: '아를에서 쓰러진 뒤 직접 찾아 들어간 요양원의 방입니다.' },
+  ];
+
+  function load(key, fallback) {
+    try { return JSON.parse(localStorage.getItem(key) || 'null') || fallback; } catch (e) { return fallback; }
+  }
+  let progress = load('vg_trilogy', {});
+  let allOpen = false;   // 제목 5번 누르면 모든 방 열림 (수업에서 한 편만 보여줄 때)
+
+  function isOpen(i) { return allOpen || i === 0 || !!progress[ROOMS[i - 1].key]; }
+
+  function render() {
+    const box = document.getElementById('rooms');
+    box.innerHTML = '';
+    const nextIdx = ROOMS.findIndex(r => !progress[r.key]);
+    ROOMS.forEach((r, i) => {
+      const open = isOpen(i), done = !!progress[r.key];
+      const el = document.createElement('div');
+      el.className = `room r${i + 1} ${open ? 'open' : 'locked'} ${i === nextIdx && open ? 'next' : ''}`;
+      el.innerHTML = `
+        <canvas width="80" height="50"></canvas>
+        <div class="lock">앞 방을 탈출하면 열립니다</div>
+        <div class="no">${r.no}</div>
+        <h2>${r.name}</h2>
+        <div class="when">${r.when}</div>
+        <div class="desc">${r.desc}</div>
+        <div class="state">${done ? `탈출 완료 · 엔딩 <b>「${progress[r.key].ending}」</b>` : open ? '도전 가능' : '잠긴 방'}</div>`;
+      el.onclick = () => open ? go(r.file) : toast('앞 방을 먼저 탈출해야 열립니다.');
+      box.appendChild(el);
+      DRAW[i](el.querySelector('canvas').getContext('2d'));
+    });
+    document.querySelectorAll('.palette span').forEach((s, i) => s.classList.toggle('on', !!progress[ROOMS[i].key]));
+
+    const btn = document.getElementById('main-btn');
+    const anyDone = ROOMS.some(r => progress[r.key]);
+    if (nextIdx === -1) { btn.textContent = '모든 방을 탈출했습니다 · 처음부터 다시 하기'; btn.onclick = () => go(ROOMS[0].file); }
+    else if (!anyDone) { btn.textContent = '시작하기'; btn.onclick = () => go(ROOMS[0].file); }
+    else { btn.textContent = `이어하기 · ${ROOMS[nextIdx].no} 「${ROOMS[nextIdx].name}」`; btn.onclick = () => go(ROOMS[nextIdx].file); }
+    document.getElementById('reset-btn').style.display = anyDone ? '' : 'none';
+  }
+
+  function go(file) {
+    document.body.style.transition = 'opacity 0.8s ease';
+    document.body.style.opacity = '0';
+    setTimeout(() => location.href = file, 800);
+  }
+
+  function resetAll() {
+    if (!confirm('세 방의 기록을 모두 지우고 처음부터 시작할까요?')) return;
+    try { ['vg_trilogy', 'vg_nuenen', 'vg_arles'].forEach(k => localStorage.removeItem(k)); } catch (e) {}
+    progress = {};
+    render();
+    toast('기록을 지웠습니다.');
+  }
+
+  let toastTimer;
+  function toast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+  }
+
+  let titleTaps = 0, tapTimer;
+  document.getElementById('title').addEventListener('click', () => {
+    titleTaps++; clearTimeout(tapTimer); tapTimer = setTimeout(() => titleTaps = 0, 1500);
+    if (titleTaps >= 5 && !allOpen) { allOpen = true; render(); toast('모든 방이 열렸습니다. (선생님용)'); }
+  });
+
+  // ====== 도트 방 그림 (80×50칸) ======
+  function R(c, x, y, w, h, col) { c.fillStyle = col; c.fillRect(x, y, w, h); }
+
+  const DRAW = [
+    // 누에넨 — 갈색 회벽, 작은 창 밖 포플러, 등잔, 이젤
+    c => {
+      R(c, 0, 0, 80, 50, '#3a2a1c'); R(c, 0, 36, 80, 14, '#2a1c12');
+      for (let x = 0; x < 80; x += 9) R(c, x, 36, 1, 14, '#22160e');
+      for (let i = 0; i < 40; i++) R(c, (i * 37) % 80, (i * 23) % 36, 1, 1, '#42301f');
+      R(c, 8, 8, 20, 16, '#5a4430'); R(c, 9, 9, 18, 14, '#8a8a80'); R(c, 9, 17, 18, 6, '#6a6a50');
+      R(c, 17, 9, 1, 14, '#5a4430'); R(c, 9, 15, 18, 1, '#5a4430');
+      R(c, 12, 11, 2, 10, '#3a3a28'); R(c, 22, 10, 2, 11, '#3a3a28');
+      R(c, 47, 4, 1, 6, '#1a120a'); R(c, 45, 10, 5, 4, '#c89040'); R(c, 46, 11, 3, 2, '#f8d878');
+      c.fillStyle = 'rgba(248,216,120,0.10)'; c.beginPath(); c.arc(47, 13, 14, 0, 7); c.fill();
+      R(c, 56, 12, 16, 12, '#2a1e14'); R(c, 57, 13, 14, 10, '#4a3a22');
+      R(c, 60, 17, 3, 3, '#6a5030'); R(c, 65, 16, 3, 4, '#6a5030');
+      R(c, 58, 24, 1, 16, '#5a4028'); R(c, 69, 24, 1, 16, '#5a4028'); R(c, 63, 6, 1, 6, '#5a4028');
+      R(c, 56, 24, 16, 1, '#5a4028');
+    },
+    // 아를 — 노란 벽, 초록 덧창, 빨간 이불 침대, 의자
+    c => {
+      R(c, 0, 0, 80, 50, '#d8b848'); R(c, 0, 36, 80, 14, '#a87850');
+      for (let x = 0; x < 80; x += 7) R(c, x, 36, 1, 14, '#906040');
+      R(c, 0, 0, 80, 2, '#c0a038');
+      R(c, 30, 6, 20, 18, '#4a7a50'); R(c, 32, 8, 16, 14, '#8ab0d8'); R(c, 39, 8, 2, 14, '#4a7a50'); R(c, 32, 14, 16, 2, '#4a7a50');
+      R(c, 26, 6, 4, 18, '#5a8a58'); R(c, 50, 6, 4, 18, '#5a8a58');
+      R(c, 4, 10, 10, 12, '#7a5030'); R(c, 5, 11, 8, 10, '#e8c048'); R(c, 7, 13, 3, 3, '#c87828'); R(c, 9, 16, 2, 2, '#b86020');
+      R(c, 54, 22, 3, 18, '#b07038'); R(c, 54, 30, 24, 8, '#b07038'); R(c, 57, 28, 21, 5, '#c84030');
+      R(c, 57, 26, 7, 3, '#f0ecd8'); R(c, 65, 26, 7, 3, '#f0ecd8'); R(c, 56, 38, 2, 4, '#906030'); R(c, 76, 38, 2, 4, '#906030');
+      R(c, 14, 30, 10, 2, '#c89048'); R(c, 15, 24, 1, 6, '#b07838'); R(c, 22, 24, 1, 6, '#b07838');
+      R(c, 15, 32, 1, 7, '#b07838'); R(c, 22, 32, 1, 7, '#b07838');
+    },
+    // 생레미 — 회녹색 벽, 창살 창 너머 밤하늘과 별·달, 철제 침대
+    c => {
+      R(c, 0, 0, 80, 50, '#7a8a78'); R(c, 0, 36, 80, 14, '#8a4a38');
+      for (let x = 0; x < 80; x += 6) for (let y = 36; y < 50; y += 6) R(c, x, y, 6, 1, '#6a3828');
+      R(c, 22, 5, 30, 22, '#4a5048'); R(c, 24, 7, 26, 18, '#1a2a58');
+      R(c, 24, 19, 26, 6, '#2a3a68'); R(c, 24, 22, 26, 3, '#3a3a40');
+      const stars = [[27, 9], [33, 12], [44, 9], [47, 15], [30, 16], [38, 10]];
+      stars.forEach(([x, y]) => { R(c, x, y, 1, 1, '#f8e8a0'); });
+      R(c, 41, 13, 3, 3, '#f8e070'); R(c, 42, 13, 2, 1, '#1a2a58');
+      R(c, 26, 20, 2, 5, '#0a1a10'); R(c, 25, 22, 4, 3, '#0a1a10');
+      for (let x = 27; x < 50; x += 4) R(c, x, 7, 1, 18, '#3a3a40');
+      R(c, 24, 15, 26, 1, '#3a3a40');
+      R(c, 4, 26, 2, 14, '#3a3a40'); R(c, 4, 30, 16, 1, '#3a3a40'); R(c, 6, 31, 14, 5, '#d8d0c0');
+      R(c, 18, 26, 2, 14, '#3a3a40'); R(c, 6, 36, 14, 1, '#3a3a40');
+      R(c, 60, 18, 14, 18, '#5a4028'); R(c, 61, 19, 12, 10, '#3a68b0'); R(c, 63, 21, 3, 2, '#f0f0e0'); R(c, 68, 23, 3, 2, '#f0f0e0');
+      R(c, 62, 36, 1, 6, '#5a4028'); R(c, 71, 36, 1, 6, '#5a4028');
+    },
+  ];
+
+  render();
+</script>
+</body>
+</html>
